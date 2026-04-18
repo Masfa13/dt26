@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <style>
+    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #f8fafc; }
+    .loader { border-top-color: #2563eb; animation: spinner 0.8s linear infinite; }
+    @keyframes spinner { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    .sticky-col { position: sticky; left: 0; background-color: white; z-index: 10; border-right: 2px solid #f1f5f9; }
+    .custom-scrollbar::-webkit-scrollbar { height: 6px; width: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+    .nav-item { transition: all 0.2s; border-radius: 0.75rem; }
+    .nav-active { background-color: #2563eb !important; color: white !important; box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3); }
+    .grad-blue { background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%); }
+    input[type="radio"]:checked + .radio-box { background-color: #2563eb; color: white; border-color: #2563eb; }
+    
+    @media (min-width: 768px) {
+      .main-container { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; }
+      .sidebar { position: sticky; top: 0; height: 100vh; }
+      .content-area { padding: 2rem; }
+      .mobile-nav { display: none; }
+    }
+    @media (max-width: 767px) {
+      .sidebar { display: none; }
+      .mobile-nav { display: flex; }
+      .content-area { padding: 1.25rem; padding-bottom: 5rem; }
+    }
+  </style>
+</head>
+<body class="text-slate-800">
+
+  <div class="main-container">
+    <!-- SIDEBAR (Desktop) -->
+    <aside class="sidebar bg-white border-r border-slate-200 p-6 flex flex-col">
+      <div class="mb-10">
+        <h1 class="text-blue-600 font-bold text-xl tracking-tight">DOUBLE TRACK</h1>
+        <p class="text-[10px] text-slate-400 font-semibold tracking-widest uppercase">Presensi Digital 2026</p>
+      </div>
+      <nav class="space-y-2 flex-1">
+        <button onclick="setMode('dashboard')" id="side-dashboard" class="nav-item w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-slate-500 hover:bg-slate-50">
+          <i class="fas fa-th-large"></i> Dashboard
+        </button>
+        <button onclick="setMode('input')" id="side-input" class="nav-item w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-slate-500 hover:bg-slate-50">
+          <i class="fas fa-edit"></i> Input Absensi
+        </button>
+        <button onclick="setMode('rekap')" id="side-rekap" class="nav-item w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-slate-500 hover:bg-slate-50">
+          <i class="fas fa-file-alt"></i> Rekap Data
+        </button>
+      </nav>
+    </aside>
+
+    <main class="content-area w-full max-w-6xl mx-auto">
+      <!-- Skill Switcher -->
+      <div id="skill-selector" class="hidden mb-6">
+        <div class="bg-white p-1.5 rounded-2xl inline-flex gap-1 shadow-sm border border-slate-200 w-full md:w-auto">
+          <button onclick="switchTab('TATABOGA')" id="btn-TATABOGA" class="px-8 py-2.5 rounded-xl text-[11px] font-bold transition-all bg-blue-600 text-white shadow-md">TATABOGA</button>
+          <button onclick="switchTab('TKR')" id="btn-TKR" class="px-8 py-2.5 rounded-xl text-[11px] font-bold transition-all text-slate-400 hover:bg-slate-50">TKR</button>
+        </div>
+      </div>
+
+      <!-- Dashboard -->
+      <div id="mode-dashboard" class="space-y-8">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="dashboard-content">
+          <!-- Card content will be updated by JS -->
+           <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 animate-pulse h-40"></div>
+           <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 animate-pulse h-40"></div>
+        </div>
+      </div>
+
+      <!-- Mode Input -->
+      <div id="mode-input" class="hidden max-w-2xl mx-auto space-y-6">
+        <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
+          <div class="flex flex-col md:flex-row md:items-end gap-4">
+            <div class="flex-1">
+              <label class="text-[10px] font-bold text-slate-400 uppercase mb-2 block ml-1">Pilih Tanggal</label>
+              <input type="date" id="input-date" class="w-full p-3.5 bg-slate-50 rounded-2xl border-none outline-none text-slate-700 font-medium focus:ring-2 focus:ring-blue-500" onchange="renderInput()">
+            </div>
+            <button onclick="autoHadir()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-4 rounded-2xl text-[11px] font-bold uppercase tracking-wider transition-all shadow-lg">
+              <i class="fas fa-check-double mr-2"></i> Hadir Semua
+            </button>
+          </div>
+        </div>
+        <div id="list-input" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+      </div>
+
+      <!-- Mode Rekap -->
+      <div id="mode-rekap" class="hidden space-y-4">
+        <div class="flex justify-between items-center bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+           <h2 class="text-sm font-bold text-slate-700">Tabel Rekapitulasi Presensi</h2>
+           <div class="text-[10px] text-slate-400">Data Terkini  <i class="fas fa-bolt ml-1 text-yellow-500"></i></div>
+        </div>
+        <div class="bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden">
+          <div class="overflow-x-auto custom-scrollbar">
+            <table class="w-full border-collapse">
+              <thead class="bg-slate-50 border-b border-slate-100">
+                <tr id="rekap-header" class="text-[10px] text-slate-400 uppercase font-bold tracking-wider"></tr>
+              </thead>
+              <tbody id="rekap-body" class="divide-y divide-slate-50 text-[11px]"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Floating Save Button -->
+    <div id="save-container" class="hidden fixed bottom-6 right-6 md:right-12 z-50 pointer-events-none">
+      <button onclick="saveAbsen()" class="pointer-events-auto flex items-center gap-3 px-8 py-4 grad-blue text-white rounded-2xl shadow-2xl active:scale-95 transition-all text-[11px] font-bold uppercase tracking-widest">
+        <i class="fas fa-save text-base"></i> Simpan Data
+      </button>
+    </div>
+
+    <!-- Mobile Nav -->
+    <nav class="mobile-nav fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 px-6 py-3 justify-between z-50">
+      <button onclick="setMode('dashboard')" id="nav-dashboard" class="flex flex-col items-center gap-1 opacity-40">
+        <i class="fas fa-th-large text-lg"></i><span class="text-[9px] font-bold uppercase">Home</span>
+      </button>
+      <button onclick="setMode('input')" id="nav-input" class="flex flex-col items-center gap-1 opacity-40">
+        <i class="fas fa-edit text-lg"></i><span class="text-[9px] font-bold uppercase">Input</span>
+      </button>
+      <button onclick="setMode('rekap')" id="nav-rekap" class="flex flex-col items-center gap-1 opacity-40">
+        <i class="fas fa-file-alt text-lg"></i><span class="text-[9px] font-bold uppercase">Rekap</span>
+      </button>
+    </nav>
+  </div>
+
+  <div id="loading" class="fixed inset-0 bg-white/80 backdrop-blur-md z-[100] flex flex-col items-center justify-center hidden">
+    <div class="loader h-12 w-12 border-4 border-slate-200 rounded-full mb-4"></div>
+    <p id="loading-text" class="text-[10px] font-bold text-blue-600 uppercase tracking-widest animate-pulse">Sinkronisasi Database...</p>
+  </div>
+
+  <script>
+    let skill = 'TATABOGA';
+    let mode = 'dashboard';
+    let cacheData = { 'TATABOGA': null, 'TKR': null, 'DASHBOARD': null };
+
+    document.getElementById('input-date').valueAsDate = new Date();
+
+    async function call(f, ...a) {
+      return new Promise((res, rej) => {
+        if (typeof google !== 'undefined' && google.script && google.script.run) {
+          google.script.run.withSuccessHandler(res).withFailureHandler(rej)[f](...a);
+        } else {
+          // Mock data for preview
+          setTimeout(() => {
+            if (f === 'getFullDashboardData') res({'TATABOGA': { totalPertemuan: 15, rataRataHadir: 0.92 }, 'TKR': { totalPertemuan: 12, rataRataHadir: 0.88 }});
+            else if (f === 'getDataPeserta') res({
+              peserta: [{ rowIndex: 6, nama: "CONTOH SISWA A", kehadiran: ['H', 'I'], rekapIndividu: { h: 1, i: 1, a: 0 } }],
+              dates: ["01/01", "08/01"],
+            });
+            else res("Success");
+          }, 800);
+        }
+      });
+    }
+
+    // Fungsi utama: Load data dan simpan di memori
+    async function loadData(force = false) {
+      // Jika mode dashboard, selalu ambil data terbaru
+      if (mode === 'dashboard') {
+        showLoading(true, "Memperbarui Dashboard...");
+        cacheData.DASHBOARD = await call('getFullDashboardData');
+        updateDashboardUI();
+        showLoading(false);
+        return;
+      }
+
+      // Jika data sudah ada di cache dan tidak dipaksa (force), jangan loading lagi
+      if (cacheData[skill] && !force) {
+        render();
+        return;
+      }
+
+      showLoading(true, `Mengambil Data ${skill}...`);
+      try {
+        cacheData[skill] = await call('getDataPeserta', skill);
+        render();
+      } catch(e) { console.error(e); }
+      finally { showLoading(false); }
+    }
+
+    function updateDashboardUI() {
+      const data = cacheData.DASHBOARD;
+      if (!data) return;
+      const container = document.getElementById('dashboard-content');
+      
+      const config = {
+        'TATABOGA': { label: 'Tataboga', icon: 'fa-utensils', bg: 'blue', grad: 'grad-blue' },
+        'TKR': { label: 'TKR', icon: 'fa-tools', bg: 'orange', grad: 'bg-orange-500' }
+      };
+
+      container.innerHTML = Object.keys(config).map(s => `
+        <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+           <div class="flex justify-between items-start mb-4">
+             <div>
+               <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Keterampilan</p>
+               <h3 class="text-xl font-bold text-slate-800">${config[s].label}</h3>
+             </div>
+             <div class="w-10 h-10 bg-${config[s].bg}-50 rounded-xl flex items-center justify-center text-${config[s].bg}-600">
+               <i class="fas ${config[s].icon}"></i>
+             </div>
+           </div>
+           <div class="grid grid-cols-2 gap-4 mt-6">
+             <div class="bg-slate-50 p-4 rounded-2xl">
+               <p class="text-[9px] text-slate-400 font-bold uppercase mb-1">Pertemuan</p>
+               <h4 class="text-2xl font-semibold text-slate-700">${data[s].totalPertemuan}</h4>
+             </div>
+             <div class="bg-green-50 p-4 rounded-2xl">
+               <p class="text-[9px] text-green-500 font-bold uppercase mb-1">Kehadiran</p>
+               <h4 class="text-2xl font-semibold text-green-600">${Math.round(data[s].rataRataHadir * 100)}%</h4>
+             </div>
+           </div>
+        </div>
+      `).join('');
+    }
+
+    function setMode(m) {
+      mode = m;
+      ['dashboard', 'input', 'rekap'].forEach(x => {
+        document.getElementById('mode-'+x).classList.toggle('hidden', x !== m);
+        const sideBtn = document.getElementById('side-'+x);
+        if(sideBtn) sideBtn.classList.toggle('nav-active', x === m);
+        const navBtn = document.getElementById('nav-'+x);
+        if(navBtn) navBtn.style.opacity = (x === m) ? "1" : "0.4";
+      });
+      document.getElementById('skill-selector').classList.toggle('hidden', m === 'dashboard');
+      document.getElementById('save-container').classList.toggle('hidden', m !== 'input');
+      loadData();
+    }
+
+    async function switchTab(t) {
+      skill = t;
+      ['TATABOGA', 'TKR'].forEach(s => {
+        const btn = document.getElementById('btn-'+s);
+        btn.className = (t === s) 
+          ? "px-8 py-2.5 rounded-xl text-[11px] font-bold transition-all bg-blue-600 text-white shadow-md"
+          : "px-8 py-2.5 rounded-xl text-[11px] font-bold transition-all text-slate-400 hover:bg-slate-50 bg-transparent";
+      });
+      await loadData();
+    }
+
+    function render() {
+      const data = cacheData[skill];
+      if(!data) return;
+      if(mode === 'input') renderInput();
+      if(mode === 'rekap') renderRekap();
+    }
+
+    function renderInput() {
+      const data = cacheData[skill];
+      const container = document.getElementById('list-input');
+      const curDate = formatDate(document.getElementById('input-date').value);
+      const dateIdx = data.dates.indexOf(curDate);
+      
+      container.innerHTML = data.peserta.map(p => {
+        const status = dateIdx !== -1 ? p.kehadiran[dateIdx] : '';
+        return `
+          <div class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm">
+            <p class="text-[11px] font-bold text-slate-700 mb-4 truncate tracking-tight uppercase">${p.nama}</p>
+            <div class="flex gap-2">
+              ${['H','I','A'].map(s => `
+                <label class="flex-1 cursor-pointer">
+                  <input type="radio" name="p-${p.rowIndex}" value="${s}" class="hidden" ${status === s ? 'checked' : ''}>
+                  <div class="radio-box py-3 text-center rounded-xl border border-slate-100 text-[10px] font-bold text-slate-400 bg-slate-50 transition-all">
+                    ${s === 'H' ? 'HADIR' : (s === 'I' ? 'IZIN' : 'ALPA')}
+                  </div>
+                </label>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderRekap() {
+      const data = cacheData[skill];
+      const header = document.getElementById('rekap-header');
+      const body = document.getElementById('rekap-body');
+      
+      let headHTML = `<th class="p-4 sticky-col text-left font-bold text-slate-500 bg-slate-50 min-w-[180px]">Nama Peserta</th>`;
+      data.dates.forEach(d => headHTML += `<th class="p-3 text-center border-l border-slate-100 font-bold text-slate-400">${d}</th>`);
+      headHTML += `<th class="p-3 text-center border-l-2 border-slate-200 bg-green-50 text-green-600">H</th>`;
+      headHTML += `<th class="p-3 text-center border-l border-slate-100 bg-blue-50 text-blue-600">I</th>`;
+      headHTML += `<th class="p-3 text-center border-l border-slate-100 bg-red-50 text-red-600">A</th>`;
+      header.innerHTML = headHTML;
+
+      body.innerHTML = data.peserta.map(p => {
+        let dateCols = '';
+        data.dates.forEach((d, i) => {
+          const s = p.kehadiran[i] || '-';
+          let colorClass = s === 'H' ? 'text-green-500 font-bold' : (s === 'A' ? 'text-red-500 font-bold' : 'text-slate-300');
+          dateCols += `<td class="p-3 text-center border-l border-slate-50 ${colorClass}">${s}</td>`;
+        });
+        return `
+          <tr class="hover:bg-slate-50">
+            <td class="p-4 sticky-col font-bold text-slate-600 bg-white uppercase tracking-tighter">${p.nama}</td>
+            ${dateCols}
+            <td class="p-3 text-center border-l-2 border-slate-200 bg-green-50/20 font-bold text-green-600">${p.rekapIndividu.h}</td>
+            <td class="p-3 text-center border-l border-slate-100 bg-blue-50/20 font-bold text-blue-600">${p.rekapIndividu.i}</td>
+            <td class="p-3 text-center border-l border-slate-100 bg-red-50/20 font-bold text-red-600">${p.rekapIndividu.a}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    async function saveAbsen() {
+      const tgl = document.getElementById('input-date').value;
+      const absen = [];
+      const data = cacheData[skill];
+      data.peserta.forEach(p => {
+        const sel = document.querySelector(`input[name="p-${p.rowIndex}"]:checked`);
+        if(sel) absen.push({ rowIndex: p.rowIndex, status: sel.value });
+      });
+      if(!absen.length) return;
+      
+      showLoading(true, "Menyimpan Data ke Cloud...");
+      try {
+        await call('simpanAbsensi', skill, tgl, absen);
+        // Setelah simpan, paksa ambil data terbaru dari server
+        await loadData(true);
+      } catch(e) { console.error(e); }
+      finally { showLoading(false); }
+    }
+
+    function autoHadir() { document.querySelectorAll('input[value="H"]').forEach(i => i.checked = true); }
+    function formatDate(v) { const d = new Date(v); return ("0" + d.getDate()).slice(-2) + "/" + ("0" + (d.getMonth() + 1)).slice(-2); }
+    function showLoading(v, text = "Sinkronisasi...") { 
+      document.getElementById('loading-text').innerText = text;
+      document.getElementById('loading').classList.toggle('hidden', !v); 
+    }
+
+    window.onload = () => setMode('dashboard');
+  </script>
+</body>
+</html>
